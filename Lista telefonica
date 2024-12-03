@@ -1,0 +1,124 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define TABLE_SIZE 10
+
+typedef struct Contact {
+    char name[50];
+    char phone[15];
+    struct Contact* next;
+} Contact;
+
+Contact* hashTable[TABLE_SIZE];
+
+unsigned int hashFunction(const char* name) {
+    unsigned int hash = 0;
+    while (*name) {
+        hash += *name++;
+    }
+    return hash % TABLE_SIZE;
+}
+
+void addContact(const char* name, const char* phone) {
+    unsigned int index = hashFunction(name);
+    Contact* newContact = (Contact*)malloc(sizeof(Contact));
+    strcpy(newContact->name, name);
+    strcpy(newContact->phone, phone);
+    newContact->next = hashTable[index];
+    hashTable[index] = newContact;
+}
+
+char* searchContact(const char* name) {
+    unsigned int index = hashFunction(name);
+    Contact* contact = hashTable[index];
+    while (contact) {
+        if (strcmp(contact->name, name) == 0) {
+            return contact->phone;
+        }
+        contact = contact->next;
+    }
+    return "Contato não encontrado.";
+}
+
+void removeContact(const char* name) {
+    unsigned int index = hashFunction(name);
+    Contact* contact = hashTable[index];
+    Contact* prev = NULL;
+    while (contact) {
+        if (strcmp(contact->name, name) == 0) {
+            if (prev) {
+                prev->next = contact->next;
+            } else {
+                hashTable[index] = contact->next;
+            }
+            free(contact);
+            printf("Contato excluido com sucesso.\n");
+            return;
+        }
+        prev = contact;
+        contact = contact->next;
+    }
+    printf("Contato não encontrado.\n");
+}
+
+void displayContacts() {
+    for (int i = 0; i < TABLE_SIZE; ++i) {
+        Contact* contact = hashTable[i];
+        while (contact) {
+            printf("Nome: %s, Telefone: %s\n", contact->name, contact->phone);
+            contact = contact->next;
+        }
+    }
+}
+
+int main() {
+    int option;
+    char name[50], phone[15];
+    clock_t start, end;
+    double cpu_time_used;
+
+    do {
+        printf("\nEscolha uma opção:\n1 - Adicionar contato\n2 - Buscar contato por nome\n3 - Excluir contato\n4 - Exibir todos os contatos\n0 - Sair\nDigite uma opção: \n");
+        scanf("%d", &option);
+
+        start = clock();
+
+        switch (option) {
+            case 1:
+                printf("Nome: ");
+                scanf("%s", name);
+                printf("Telefone: ");
+                scanf("%s", phone);
+                addContact(name, phone);
+                printf("Contato adicionado com sucesso.\n");
+                break;
+            case 2:
+                printf("Nome: ");
+                scanf("%s", name);
+                printf("Telefone de %s: %s\n", name, searchContact(name));
+                break;
+            case 3:
+                printf("Nome: ");
+                scanf("%s", name);
+                removeContact(name);
+                break;
+            case 4:
+                displayContacts();
+                break;
+            case 0:
+                printf("Saindo...\n");
+                break;
+            default:
+                printf("Opção inválida.\n");
+        }
+
+        end = clock();
+        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC * 1000;
+        printf("Tempo de execução: %.2f ms\n", cpu_time_used);
+
+    } while (option != 0);
+
+    return 0;
+}
